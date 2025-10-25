@@ -145,6 +145,343 @@
   }
 </style>
 </head>
+<!-- ===== Romantic Balloon Intro (paste near top of <body>) ===== -->
+<style>
+  /* Overlay + center */
+  #balloonIntroOverlay {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,238,248,0.98), rgba(255,240,248,0.98));
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 30px;
+  }
+
+  .intro-card{
+    max-width: 920px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .intro-title{
+    font-family: 'Pacifico', cursive;
+    font-size: 2.4rem;
+    color: #c44569;
+    margin-bottom: 18px;
+  }
+
+  /* big balloon */
+  .balloon-wrap{
+    position: relative;
+    width: 260px;
+    height: 360px;
+    margin: 0 auto 18px;
+    pointer-events: auto;
+  }
+
+  .balloon {
+    position: absolute;
+    left: 50%;
+    top: 35%;
+    transform: translate(-50%, -50%);
+    width: 150px;
+    height: 200px;
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    box-shadow: 0 14px 32px rgba(196,70,121,0.25), inset -8px -8px 24px rgba(255,255,255,0.15);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.35s ease, opacity 0.35s ease;
+  }
+
+  .balloon .shine {
+    position:absolute;
+    right:18%;
+    top:12%;
+    width:32%;
+    height:28%;
+    background:rgba(255,255,255,0.6);
+    border-radius:50%;
+    filter: blur(4px);
+    transform: rotate(-25deg);
+    opacity:0.9;
+  }
+
+  .string {
+    position:absolute;
+    left:50%;
+    top:70%;
+    width:4px;
+    height:90px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.05));
+    transform: translateX(-50%);
+    border-radius:2px;
+  }
+
+  .pop-count {
+    font-weight:700;
+    color:#7a3a63;
+    margin-top:8px;
+    font-size:1rem;
+  }
+
+  /* particle hearts */
+  .particle {
+    position: absolute;
+    font-size: 18px;
+    will-change: transform, opacity;
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  /* final message card */
+  #balloonFinalMsg {
+    display: none;
+    margin-top: 18px;
+    background: white;
+    padding: 18px 22px;
+    border-radius: 14px;
+    box-shadow: 0 10px 36px rgba(196,70,121,0.12);
+    border: 2px solid rgba(255,215,0,0.06);
+  }
+  #balloonFinalMsg button {
+    margin-left:12px;
+    padding:10px 18px;
+    border-radius:12px;
+    border:none;
+    background: linear-gradient(45deg,#ff6b9d,#ffc8dd);
+    color:white;
+    font-weight:700;
+    cursor:pointer;
+  }
+
+  /* subtle floating (breath) */
+  @keyframes breathe {
+    0% { transform: translate(-50%, -50%) translateY(0); }
+    50% { transform: translate(-50%, -50%) translateY(-8px); }
+    100% { transform: translate(-50%, -50%) translateY(0); }
+  }
+  .balloon.breath { animation: breathe 2.6s ease-in-out infinite; }
+
+  /* heart particle animation (created with JS inline styles) */
+</style>
+
+<div id="balloonIntroOverlay" aria-hidden="false">
+  <div class="intro-card" role="dialog" aria-label="Birthday surprise">
+    <div class="intro-title">Tap the balloon — lado pop it 19 times to reveal...💖</div>
+
+    <div class="balloon-wrap" id="balloonWrap">
+      <!-- Balloon created by JS -->
+    </div>
+
+    <div class="pop-count" id="popCount">Popped: 0 / 19</div>
+
+    <div id="balloonFinalMsg" role="button" aria-hidden="true">
+      💌 Your hubby has something special for you...
+      <button id="continueBtn" type="button">Click to continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- audio assets (make sure these files exist in same folder) -->
+<audio id="introPopSound" preload="auto">
+  <source src="pop.mp3" type="audio/mpeg">
+</audio>
+<audio id="introBG" loop preload="auto">
+  <source src="birthday.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+/* Romantic balloon intro - one-by-one with heart burst particles.
+   Inserts balloon into #balloonWrap; pops 19 times then shows final message.
+   After clicking continue, overlay hides and main .container is revealed.
+*/
+
+// config
+const TOTAL_BALLOONS = 19;
+const particleCount = 18; // hearts per burst
+const colors = [
+  ['#ff9ecf', '#ffcce7'],
+  ['#ffb3c6', '#ffe0eb'],
+  ['#f8a1d1', '#ffd1e8'],
+  ['#ff8fc1', '#ffcee6'],
+  ['#ffa3b8', '#ffd5e0']
+];
+
+// elements
+const overlay = document.getElementById('balloonIntroOverlay');
+const wrap = document.getElementById('balloonWrap');
+const popSound = document.getElementById('introPopSound');
+const bgMusic = document.getElementById('introBG');
+const popCountEl = document.getElementById('popCount');
+const finalMsg = document.getElementById('balloonFinalMsg');
+const continueBtn = document.getElementById('continueBtn');
+const mainContainer = document.querySelector('.container'); // your main site container
+
+let popped = 0;
+let currentColorIndex = 0;
+
+// try to start gentle background music (may be blocked; user can click play later)
+bgMusic.volume = 0.45;
+bgMusic.play().catch(()=>{/* autoplay likely blocked; will play when user interacts */});
+
+// create a balloon element
+function makeBalloon() {
+  wrap.innerHTML = ''; // clear previous
+  // choose gradient
+  const grad = colors[currentColorIndex % colors.length];
+  currentColorIndex++;
+
+  const b = document.createElement('div');
+  b.className = 'balloon breath';
+  b.style.background = `linear-gradient(180deg, ${grad[0]}, ${grad[1]})`;
+  b.style.transform = 'translate(-50%,-50%) scale(1)';
+  b.setAttribute('role','button');
+  b.setAttribute('aria-label', `Balloon ${popped+1}`);
+
+  // inner shine
+  const shine = document.createElement('div');
+  shine.className = 'shine';
+  b.appendChild(shine);
+
+  // string
+  const s = document.createElement('div');
+  s.className = 'string';
+  b.appendChild(s);
+
+  // attach click handler
+  b.addEventListener('click', (e) => {
+    popBalloon(b, e.clientX, e.clientY);
+  });
+
+  wrap.appendChild(b);
+}
+
+// pop effect: heart particles and sound
+function popBalloon(balloonEl, clickX, clickY) {
+  // prevent double click
+  balloonEl.removeEventListener('click', popBalloon);
+
+  // play pop sound
+  if(popSound){
+    try { popSound.currentTime = 0; popSound.play(); } catch(e) {}
+  }
+  // shrink + fade
+  balloonEl.style.transition = 'transform 0.45s cubic-bezier(.2,.9,.3,1), opacity 0.45s';
+  balloonEl.style.transform = 'translate(-50%,-50%) scale(0.0)';
+  balloonEl.style.opacity = '0';
+
+  // create heart particles that fly out
+  createHeartBurst(balloonEl);
+
+  popped++;
+  popCountEl.textContent = `Popped: ${popped} / ${TOTAL_BALLOONS}`;
+
+  // small delay then create next balloon (unless finished)
+  setTimeout(() => {
+    if (popped >= TOTAL_BALLOONS) {
+      // show final message
+      finalMsg.style.display = 'inline-block';
+      finalMsg.setAttribute('aria-hidden','false');
+      // pause background music softly
+      try { fadeOutAudio(bgMusic, 700); } catch(e){}
+    } else {
+      makeBalloon();
+    }
+  }, 420);
+}
+
+// create hearts burst at balloon position
+function createHeartBurst(balloonEl) {
+  const rect = balloonEl.getBoundingClientRect();
+  const centerX = rect.left + rect.width/2;
+  const centerY = rect.top + rect.height/2;
+
+  for(let i=0;i<particleCount;i++){
+    const particle = document.createElement('div');
+    particle.className = 'particle';
+    // romantic hearts or sparkle (pick hearts mostly)
+    const heart = (Math.random() < 0.85) ? '❤' : '✨';
+    particle.textContent = heart;
+    particle.style.left = (centerX) + 'px';
+    particle.style.top = (centerY) + 'px';
+    particle.style.fontSize = (10 + Math.random()*16) + 'px';
+    particle.style.opacity = '1';
+    // random direction
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 60 + Math.random() * 140;
+    const tx = Math.cos(angle) * distance;
+    const ty = Math.sin(angle) * distance - (20 * Math.random()); // upwards bias
+
+    // color tint
+    const colorPair = colors[(currentColorIndex-1) % colors.length];
+    particle.style.color = colorPair[0];
+
+    document.body.appendChild(particle);
+
+    // animate with JS (so we can remove after)
+    requestAnimationFrame(() => {
+      particle.style.transition = `transform ${600 + Math.random()*600}ms cubic-bezier(.2,.9,.3,1), opacity ${600 + Math.random()*600}ms ease-out`;
+      particle.style.transform = `translate(${tx}px, ${ty}px) rotate(${Math.random()*720-360}deg)`;
+      particle.style.opacity = '0';
+    });
+
+    // remove after animation
+    setTimeout(()=> { try{ particle.remove(); }catch(e){} }, 1400 + Math.random()*400);
+  }
+}
+
+// fade out audio helper
+function fadeOutAudio(audioEl, ms=800){
+  if(!audioEl) return;
+  const startVol = audioEl.volume || 0.45;
+  const steps = 12;
+  let step = 0;
+  const iv = setInterval(()=>{
+    step++;
+    audioEl.volume = Math.max(0, startVol * (1 - step/steps));
+    if(step >= steps){
+      audioEl.pause();
+      audioEl.volume = startVol;
+      clearInterval(iv);
+    }
+  }, ms/steps);
+}
+
+// Continue button handler: reveal main site
+continueBtn.addEventListener('click', ()=>{
+  // hide overlay with fade-out
+  overlay.style.transition = 'opacity 600ms ease';
+  overlay.style.opacity = '0';
+  setTimeout(()=> {
+    overlay.style.display = 'none';
+    // reveal main container (assumes .container exists)
+    if(mainContainer){
+      mainContainer.style.display = '';
+      mainContainer.style.opacity = '0';
+      mainContainer.style.transition = 'opacity 700ms ease';
+      requestAnimationFrame(()=> mainContainer.style.opacity = '1');
+    }
+    // try to play background music (if not playing)
+    try { bgMusic.play().catch(()=>{}); } catch(e){}
+  }, 650);
+});
+
+// initial setup: hide main container until done
+if(mainContainer){
+  mainContainer.style.display = 'none';
+}
+
+// first balloon appear after tiny delay to show breathing
+setTimeout(makeBalloon, 300);
+</script>
+<!-- ===== end balloon intro ===== -->
+
 <body>
 
   <!-- Floating hearts + compliments layer -->
@@ -241,7 +578,7 @@
         <p style="text-align:right;font-style:italic;margin-top:14px">— Yash 💕</p>
       </div>
 
-     <div class="surprise-section">
+    <div class="surprise-section">
   <button class="surprise-btn" onclick="toggleSurprise()">🎁 Click for a Special Surprise!</button>
   
   <div class="surprise-content" id="surpriseContent" style="text-align:center;">
@@ -263,64 +600,84 @@
     <!-- Lyrics / Song Section -->
     <section class="lyrics-section">
       <div class="lyrics-card" id="lyricsCard">
-        <h3 style="font-family:'Pacifico',cursive;color:var(--accent2);margin-bottom:8px">Our Song — #YashKiYukti</h3>
+        <h3 style="font-family:'Pacifico',cursive;color:var(--accent2);margin-bottom:8px">A Letter for — #YashKiYukti💕</h3>
         <pre id="lyricsText">
-*Verse 1*
-Met you on Deer, August thirty, oh my,
-Chattin’ all day, all night, sparks fly.
-Thought I was prankin’, a salesgirl, maybe,
-But we made #YashKiYukti, our vibe so crazy!
+Happy birthday meri jaaaaaaan 😘😘  
+I love you so so sooooo much my wify 🫂🩷  
 
-Laptop crashed, my message was gone,
-You consoled me, made me feel so strong.
-November five, I saw you, heart raced,
-Hugged you tight, felt love’s embrace.
+Aaj meri jaan ka bday h 👀  
+Aaj us shaqs ka bday h jisse m pichle saal mila tha  
+Aur ab ye meri jaan bn gyi h 🫂🩷  
 
-*Chorus*
-Oh, my love, you’re my favorite song,
-With you, baby, I’m where I belong.
-Eyelashes, eyes, and hair, so fine,
-You’re my forever, my heart’s design.
+Iski batein ek din na sunu toh merko toh chain he nhi ata 🫂🩷  
+Last birthday pr m sochra tha ki next bday tk pta nhi sath rahenge ya nhi  
+But see apni journey kitni age agyi h 😁😁😁  
 
-*Verse 2*
-January sixteen, I ran to your side,
-Hugged you, you twirled me, my heart couldn’t hide.
-Gave you a rose, clicked pics at McD,
-You said, “This girl’s mine, forever with me.”
+Krishna sada sahayte m aj ek panna aur likhdena  
+That we are still together 😘😘😘  
 
-Kissed my hand, made my world spin,
-Wrote you a letter, let my feelings begin.
-February fifteen, movie date, so sweet,
-Held your hand, felt my heart skip a beat.
+Dono ek doosre se itna pyaar krte the  
+But propose nhi kr rahe the 😂😂  
+Kiss bhi krli but propose nhi kr paye 👀  
 
-*Chorus*
-Oh, my love, you’re my favorite song,
-With you, baby, I’m where I belong.
-Eyelashes, eyes, and hair, so fine,
-You’re my forever, my heart’s design.
+And then finally on 21 April I proposed you  
+And made you mine forever n ever for this life 😘😘😘😘😘  
 
-*Bridge*
-April twenty-one, you got down on one knee,
-Ring and a rose, said, “Be mine, please.”
-I said, “I love you,” you said, “Say it again,”
-Hugged you so tight, didn’t want it to end.
+Itni chizein hui, itna pta chla  
+But apan ne ek doosre k sath kbhi nhi chda  
+Ap itni complex situations m uljhe hue the  
+But u choosen me over everything and took a stand for me 👀🩷🫂  
 
-May seven, we sealed it, our love’s official,
-Handmade gifts, our bond so special.
-Every moment with you, my heart’s in a whirl,
-You’re my forever, my whole damn world.
+I love you so much baby 🫂🩷  
+29 ko ara hu na, sara pyaar lutaunga ap pr bhr bhr kr meri jaaaan 😘😘😘  
 
-*Chorus*
-Oh, my love, you’re my favorite song,
-With you, baby, I’m where I belong.
-Eyelashes, eyes, and hair, so fine,
-You’re my forever, my heart’s design.
+Aaj toh meri jaan, meri jeene ki wajah, meri khushiyo ki wajah ka birth hua tha 1:20 pr 👀  
+Apko pta h jaan, ap h na bht special ho, bht jyada pyaaree ho 😘😘😘😘  
+Itne cute ho na hadh se jyada 🫂  
 
-*Outro*
-From Deer app chats to our love’s sweet start,
-You’re my #YashKiYukti, you stole my heart.
-Every day with you, I’m livin’ a dream,
-My love, my king, we’re the perfect team.
+Mann krta h bs apke pass he rahu  
+Jaise ap itna sb hone k baad bhi sbki respect krte ho  
+Meri family ko respect dete ho  
+Sath nibhate ho har situation m khade regte ho sath meri himmat bnkr  
+Koi nhi deta itna sath but u are Yukti — sorry sorry YashKiYukti 😘😘😘😘  
+
+I love you so much mera babuuuu  
+Thankyou baccha for everything 🫂🩷  
+Apko idea bhi nhi h ki ap kitne jyada special ho 😘😘😘🫂🩷  
+
+Meri jaan, apko pata h apka bday apse jyada special mere liye h 😁😁  
+Kyuki agr ajka din nhi hota to meri Yukuu kese atiii 😁😁  
+Aur sb jante h ki Yash Yukti se kitna jyada pyaar krta h 😘😘😘  
+
+I love you guggu ki guggiiii 😘😘  
+I love you my wifyy 👀  
+I love you mera baccha 😘😘  
+I love you YashKiYuktiii 👀  
+I love you my world 👀  
+I love you my princesss 😘🌹  
+
+Yukti jldi se ye saal nikle  
+Fir apko bahon m bhr kr bday wish krna h 👀😘😘  
+Pta h ap kitne special ho  
+Ap h na woh heera ho, jo agr m England hota na  
+Kohinoor India m chdkr apko lejata 😘😘😘  
+
+Apke sath har moment jiya h mene 🥹🥹  
+Wo pheli baar milna, pheli baar kisika itni feelings k sath hug krna, kiss krna 🥹🥹  
+I love you so much jaan 😘😘😘  
+
+Thankyou itna comfort, itni loyalty k liye  
+I promise apko chdkr kbhi nhi jaunga  
+Hamesha apke sath rahungaaaa  
+Kyuki Yash Yukti k bina reh he nhi pata, bechain hojata hu main  
+
+Thankyou my strength, my love, mera bacchaaaa, meri himmat 🫂❤  
+
+I love you meri sherniii 😘😘😘  
+And once again, happy 19th bday meri jaan 👀  
+Happy birthday my forevernever 😘😘  
+Happy birthday my happiness 🫂❤
+
         </pre>
       </div>
     </section>
@@ -337,7 +694,7 @@ My love, my king, we’re the perfect team.
   <!-- music player -->
   <div class="music-player" id="musicPlayer">
   <div class="music-content">
-    <button id="musicBtn" onclick="toggleMusic()">🎵 click to play</button>
+   
     <div class="music-label">#YashKiYukti ❤️</div>
   </div>
   <div class="music-wave"></div>
