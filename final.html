@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Happy 19th Birthday, Yukti! 🎉</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg1: #ffeef8;
+    --bg2: #fff0f8;
+    --accent1:#ff6b9d;
+    --accent2:#c44569;
+    --gold:#ffd700;
+    --text:#4a2c4a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Poppins",sans-serif;
+    color:var(--text);
+    background: linear-gradient(135deg,var(--bg1)0%, #ffe5f4 40%, var(--bg2)100%);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  /* hearts + compliments container (full-screen layers) */
+  .floating-layer{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+  .heart{position:absolute;font-size:22px;opacity:0;animation:floatUp linear infinite;will-change:transform,opacity}
+  @keyframes floatUp{
+    0%{transform:translateY(110vh) scale(0.6) rotate(0deg);opacity:0}
+    8%{opacity:0.9}
+    92%{opacity:0.9}
+    100%{transform:translateY(-20vh) scale(1) rotate(360deg);opacity:0}
+  }
+
+  /* compliments floating (softer, slower) */
+  .compliment{
+    position:absolute;
+    font-size:16px;
+    padding:8px 12px;
+    border-radius:999px;
+    background:rgba(255,255,255,0.85);
+    box-shadow:0 6px 20px rgba(0,0,0,0.08);
+    color:var(--text);
+    opacity:0;
+    transform:translateY(120vh);
+    animation:rise 14s linear infinite;
+    white-space:nowrap;
+  }
+  @keyframes rise{
+    0%{transform:translateY(110vh) rotate(-5deg); opacity:0}
+    10%{opacity:1}
+    90%{opacity:1}
+    100%{transform:translateY(-20vh) rotate(5deg); opacity:0}
+  }
+
+  /* page layout */
+  .container{position:relative;z-index:2}
+  header.hero{
+    min-height:80vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:48px 20px;
+  }
+  .hero-inner{max-width:980px}
+  .photo-circle{
+    width:220px;height:220px;border-radius:50%;overflow:hidden;border:6px solid var(--gold);
+    margin:0 auto 22px;box-shadow:0 18px 50px rgba(196,70,121,0.12);transform-origin:center;
+    animation:softBounce 4s ease-in-out infinite;
+  }
+  @keyframes softBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+  .hero h1{font-family:'Pacifico',cursive;font-size:clamp(2.2rem,6vw,4.4rem);background:linear-gradient(45deg,var(--accent1),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+  .hero p.subtitle{font-size:1.1rem;color:#c33b75;margin-bottom:18px}
+
+  /* ribbon/celebrate bar */
+  .celebrate{
+    display:inline-block;padding:8px 18px;border-radius:40px;background:linear-gradient(90deg,var(--accent1),#ffa07a);
+    color:white;font-weight:600;box-shadow:0 8px 30px rgba(196,70,121,0.15)
+  }
+
+  /* timeline (vertical) */
+  .timeline-section{
+    padding:44px 20px 80px;
+    max-width:980px;margin:20px auto;
+  }
+  .timeline-title{font-family:'Pacifico',cursive;font-size:2.4rem;color:var(--accent2);text-align:center;margin-bottom:26px}
+  .timeline{
+    position:relative;padding-left:36px;border-left:3px dashed rgba(74,44,74,0.08);
+  }
+  .event{
+    position:relative;padding:22px 22px 22px 42px;margin-bottom:28px;background:linear-gradient(180deg,#fff,#fffefc);
+    border-radius:14px;box-shadow:0 10px 38px rgba(164,77,119,0.06);opacity:0;transform:translateY(30px);
+    transition:all 700ms cubic-bezier(.2,.9,.3,1);
+  }
+  .event.show{opacity:1;transform:none}
+  .event::before{
+    content:"";position:absolute;left:-38px;top:22px;width:18px;height:18px;border-radius:50%;
+    background:linear-gradient(45deg,var(--accent1),var(--accent2));box-shadow:0 6px 18px rgba(196,70,121,0.18)
+  }
+  .event .date{font-weight:700;color:#7a3a63;margin-bottom:8px}
+  .event .meta{font-size:0.98rem;line-height:1.5;color:#3f2a3f}
+
+  /* rotating photo carousel (slow-mo 3D) */
+  .carousel-wrap{perspective:1400px;margin:40px auto;max-width:920px}
+  .carousel{
+    width:100%;height:360px;position:relative;margin:0 auto;transform-style:preserve-3d;
+    animation:spinSlow 60s linear infinite; /* slow rotation */
+  }
+  @keyframes spinSlow{from{transform:rotateY(0deg)}to{transform:rotateY(-360deg)}}
+  .carousel .card{
+    position:absolute;left:50%;top:50%;width:260px;height:260px;margin:-130px 0 0 -130px;border-radius:18px;overflow:hidden;
+    box-shadow:0 18px 50px rgba(0,0,0,0.12);backface-visibility:hidden;background:#ccc;
+    transform-origin:center center;
+  }
+  /* positions: we'll set via inline styles in JS */
+  .card img{width:100%;height:100%;object-fit:cover;display:block}
+
+  /* message + surprise + lyrics + gallery */
+  .message-section{max-width:900px;margin:36px auto;padding:28px}
+  .message-card{background:linear-gradient(180deg,#fff,#fff7fb);padding:26px;border-radius:16px;border:3px solid var(--gold);box-shadow:0 18px 50px rgba(217,70,166,0.08)}
+  .surprise-section{text-align:center;margin:26px 0}
+  .surprise-btn{padding:16px 30px;border-radius:999px;border:none;background:linear-gradient(45deg,var(--accent1),#ffa07a);color:white;font-weight:600;cursor:pointer;box-shadow:0 10px 40px rgba(255,107,157,0.2)}
+  .surprise-content{display:none;margin-top:22px}
+
+  /* lyrics block */
+  .lyrics-section{max-width:920px;margin:30px auto;padding:22px 20px}
+  .lyrics-card{background:linear-gradient(180deg,#fff8fb,#fff);padding:22px;border-radius:12px;box-shadow:0 12px 40px rgba(161,86,121,0.06)}
+  .lyrics pre{white-space:pre-wrap;font-family:inherit;line-height:1.6;color:#4a2c4a;font-size:1rem}
+
+  /* footer + music player */
+  footer{padding:36px 20px;margin-top:30px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);text-align:center;color:white;border-top-left-radius:20px;border-top-right-radius:20px}
+  footer h3{font-family:'Pacifico',cursive;font-size:1.8rem;margin-bottom:6px}
+  .music-player{position:fixed;right:22px;bottom:18px;background:linear-gradient(45deg,var(--accent1),var(--accent2));padding:10px 14px;border-radius:999px;color:white;display:flex;align-items:center;gap:10px;z-index:999}
+  .music-player button{background:white;border:none;padding:6px 10px;border-radius:8px;cursor:pointer;color:var(--accent2);font-weight:700}
+
+  /* responsive tweaks */
+  @media (max-width:800px){
+    .carousel{height:300px}
+    .carousel .card{width:200px;height:200px;margin:-100px 0 0 -100px}
+  }
+</style>
+</head>
+<body>
+
+  <!-- Floating hearts + compliments layer -->
+  <div class="floating-layer" id="floatingLayer"></div>
+
+  <div class="container">
+
+    <!-- HERO -->
+    <header class="hero" style="text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px;">
+  <div class="hero-inner" style="max-width:980px; text-align:center;">
+    
+    <!-- Photo Circle -->
+    <div class="photo-circle" style="
+      width:220px;
+      height:220px;
+      border-radius:50%;
+      overflow:hidden;
+      margin:0 auto 20px;
+      border:4px solid gold;
+      box-shadow:0 10px 30px rgba(0,0,0,0.2);
+      flex-shrink:0;
+    ">
+      <img src="hero.jpg" alt="Yukti" style="
+        width:100%;
+        height:100%;
+        object-fit:cover;
+        display:block;
+      ">
+    </div>
+
+    <!-- Celebration Ribbon -->
+    <div class="celebrate" style="margin-bottom:10px; font-weight:600;">✨ Happy 19th Birthday — Meri Jaan ✨</div>
+    
+    <!-- Title & Subtitle -->
+    <h1 style="font-family:'Pacifico',cursive; font-size:3rem; margin:6px 0; background:linear-gradient(45deg,#ff6b9d,#c44569); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">
+      Happy 19th Birthday, Yukti! 🎉
+    </h1>
+    <p class="subtitle" style="font-size:1.1rem; color:#c33b75; margin-top:6px;">
+      The most beautiful soul turns 19 — this day is yours, my love.
+    </p>
+    
+  </div>
+</header>
+
+
+    <!-- TIMELINE -->
+    <section class="timeline-section" id="timelineSection">
+      <div class="timeline-title">Our Story — Moments I’ll Never Forget</div>
+
+      <div class="timeline" id="timeline">
+        <!-- Events inserted by JS -->
+        <div class="event" data-date="30 Aug 2024">
+          <div class="date">30 August 2024</div>
+          <div class="meta"><strong>First chat on Deer App</strong> — that first message changed everything. Sparks began there and never stopped.</div>
+        </div>
+
+        <div class="event" data-date="05 Nov 2024">
+          <div class="date">05 November 2024</div>
+          <div class="meta"><strong>First meet at NSP</strong> — the moment I saw you in person my heart raced. A hug that felt like home.</div>
+        </div>
+
+        <div class="event" data-date="16 Jan 2025">
+          <div class="date">16 January 2025</div>
+          <div class="meta"><strong>Second date</strong> — laughing, talking, and knowing something real was beginning.</div>
+        </div>
+
+        <div class="event" data-date="15 Feb 2025">
+          <div class="date">15 February 2025</div>
+          <div class="meta"><strong>First kiss at the movie theatre</strong> — a moment I’ll carry forever.</div>
+        </div>
+
+        <div class="event" data-date="21 Apr 2025">
+          <div class="date">21 April 2025</div>
+          <div class="meta"><strong>I proposed</strong> — ring and a rose, the day I asked you to be mine forever.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Carousel (Revolving photos in slow motion) -->
+<section class="carousel-wrap" aria-label="Photos carousel" style="margin-top:10px; margin-bottom:30px;">
+  <div style="text-align:center; margin-bottom:8px; font-weight:700; color:#ff6b9d; font-size:1.2rem; letter-spacing:0.5px;">
+    💖 Our Memories 💖
+  </div>
+  <div class="carousel" id="carousel"></div>
+</section>
+
+
+
+    <!-- Message + Surprise -->
+    <section class="message-section">
+      <div class="message-card">
+        <p style="margin-bottom:12px"><strong>My Dearest Yukti,</strong></p>
+        <p style="margin-bottom:12px">Happy 19th Birthday. From that first Deer message on August 30th to the moment I asked you to be mine, every second has been magic. You’re my favourite song, my best friend, my home. I love you more than words — today we celebrate you: your laugh, your kindness, your spark. Here’s to a year of dreams coming true and to us creating countless more beautiful memories together.</p>
+        <p style="text-align:right;font-style:italic;margin-top:14px">— Yash 💕</p>
+      </div>
+
+     <div class="surprise-section">
+  <button class="surprise-btn" onclick="toggleSurprise()">🎁 Click for a Special Surprise!</button>
+  
+  <div class="surprise-content" id="surpriseContent" style="text-align:center;">
+    <h3 style="font-family:'Pacifico',cursive;color:var(--accent1);margin-top:14px">💝 My Special Video</h3>
+    
+    <!-- Fixed-size professional video -->
+    <div style="margin-top:12px; display:inline-block; border-radius:16px; overflow:hidden; box-shadow:0 12px 40px rgba(196,70,121,0.2);">
+      <video id="surpriseVideo" width="480" height="270" style="display:block; max-width:100%;" controls>
+        <source src="special-surprise.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+    </div>
+  </div>
+</div>
+
+
+    </section>
+
+    <!-- Lyrics / Song Section -->
+    <section class="lyrics-section">
+      <div class="lyrics-card" id="lyricsCard">
+        <h3 style="font-family:'Pacifico',cursive;color:var(--accent2);margin-bottom:8px">Our Song — #YashKiYukti</h3>
+        <pre id="lyricsText">
+*Verse 1*
+Met you on Deer, August thirty, oh my,
+Chattin’ all day, all night, sparks fly.
+Thought I was prankin’, a salesgirl, maybe,
+But we made #YashKiYukti, our vibe so crazy!
+
+Laptop crashed, my message was gone,
+You consoled me, made me feel so strong.
+November five, I saw you, heart raced,
+Hugged you tight, felt love’s embrace.
+
+*Chorus*
+Oh, my love, you’re my favorite song,
+With you, baby, I’m where I belong.
+Eyelashes, eyes, and hair, so fine,
+You’re my forever, my heart’s design.
+
+*Verse 2*
+January sixteen, I ran to your side,
+Hugged you, you twirled me, my heart couldn’t hide.
+Gave you a rose, clicked pics at McD,
+You said, “This girl’s mine, forever with me.”
+
+Kissed my hand, made my world spin,
+Wrote you a letter, let my feelings begin.
+February fifteen, movie date, so sweet,
+Held your hand, felt my heart skip a beat.
+
+*Chorus*
+Oh, my love, you’re my favorite song,
+With you, baby, I’m where I belong.
+Eyelashes, eyes, and hair, so fine,
+You’re my forever, my heart’s design.
+
+*Bridge*
+April twenty-one, you got down on one knee,
+Ring and a rose, said, “Be mine, please.”
+I said, “I love you,” you said, “Say it again,”
+Hugged you so tight, didn’t want it to end.
+
+May seven, we sealed it, our love’s official,
+Handmade gifts, our bond so special.
+Every moment with you, my heart’s in a whirl,
+You’re my forever, my whole damn world.
+
+*Chorus*
+Oh, my love, you’re my favorite song,
+With you, baby, I’m where I belong.
+Eyelashes, eyes, and hair, so fine,
+You’re my forever, my heart’s design.
+
+*Outro*
+From Deer app chats to our love’s sweet start,
+You’re my #YashKiYukti, you stole my heart.
+Every day with you, I’m livin’ a dream,
+My love, my king, we’re the perfect team.
+        </pre>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <h3>With All My Love ❤️</h3>
+      <p style="margin-top:6px">Forever and Always — <span style="font-family:'Pacifico',cursive;font-size:1.15rem">Yash</span></p>
+      <p style="opacity:0.9;margin-top:8px;font-size:.9rem">Made with every beat of my heart — Happy 19th, Yukti.</p>
+    </footer>
+
+  </div><!-- /container -->
+
+  <!-- music player -->
+  <div class="music-player" id="musicPlayer">
+  <div class="music-content">
+    <button id="musicBtn" onclick="toggleMusic()">🎵 click to play</button>
+    <div class="music-label">#YashKiYukti ❤️</div>
+  </div>
+  <div class="music-wave"></div>
+</div>
+
+
+
+  <!-- hidden audio -->
+  <audio id="bgAudio" loop>
+    <!-- Replace this src with your own hosted mp3 (her favorite song or your recorded message) -->
+    <source src="birthday.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+
+<script>
+/* =========================
+   Floating hearts & compliments
+   ========================= */
+const floatingLayer = document.getElementById('floatingLayer');
+const heartEmojis = ['💖','💕','💗','💝','💓','✨','⭐'];
+const compliments = [
+  'Beautiful 💖','Kind 🌸','#YashkiYukti ✨','Strong 🌈','GuggukiGuggi ❤️','Radiant 🌟',
+  'Your smile 😍','Amazing 💫','My sunshine ☀️','My forever 💕','Inspiring ✨','I Love You💕','I Love You💕','I Love You💕','I Love You💕','#YashkiYukti ✨','#YashkiYukti ✨','#YashkiYukti ✨'
+];
+
+function spawnHeart(){
+  const el = document.createElement('div');
+  el.className = 'heart';
+  el.textContent = heartEmojis[Math.floor(Math.random()*heartEmojis.length)];
+  el.style.left = Math.random()*100 + 'vw';
+  el.style.fontSize = (14 + Math.random()*28) + 'px';
+  el.style.animationDuration = (8 + Math.random()*8) + 's';
+  el.style.opacity = 0;
+  floatingLayer.appendChild(el);
+  setTimeout(()=>el.remove(),16000);
+}
+function spawnCompliment(){
+  const el = document.createElement('div');
+  el.className = 'compliment';
+  el.textContent = compliments[Math.floor(Math.random()*compliments.length)];
+  el.style.left = (5 + Math.random()*90) + 'vw';
+  el.style.animationDuration = (12 + Math.random()*12) + 's';
+  el.style.fontSize = (13 + Math.random()*6) + 'px';
+  el.style.transform = `translateY(110vh) rotate(${(Math.random()*20)-10}deg)`;
+  floatingLayer.appendChild(el);
+  setTimeout(()=>el.remove(),20000);
+}
+// spawn more fancily
+setInterval(spawnHeart, 600);
+setInterval(spawnCompliment, 1400);
+
+/* =========================
+   Timeline: reveal on scroll
+   ========================= */
+const events = document.querySelectorAll('.timeline .event');
+const revealObserver = new IntersectionObserver((entries)=>{
+  entries.forEach(entry => {
+    if(entry.isIntersecting) entry.target.classList.add('show');
+  });
+}, {threshold: 0.25});
+events.forEach(ev => revealObserver.observe(ev));
+
+/* =========================
+   Carousel - slow 3D revolving photos
+   ========================= */
+const carousel = document.getElementById('carousel');
+
+// Replace these urls with your actual images (hosted). Keep at least 4-8 images for a nice 3D effect.
+const carouselImages = [
+ 'meet-nsp.jpg',
+  'date-jan16.jpg',
+  'movie-feb15.jpg',
+  'proposal-apr21.jpg',
+  'official-may7.jpg',
+  'cute1.jpg',
+  'cute2.jpg',
+  'cute3.jpg'
+];
+
+function buildCarousel(){
+  carousel.innerHTML='';
+  const n = carouselImages.length;
+  const radius = Math.min(window.innerWidth,920) * 0.38; // radius of circle
+  for(let i=0;i<n;i++){
+    const angle = (i/n) * Math.PI*2;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    const scale = 0.9 + ( (z / (radius*1.6)) ); // simple depth-scaling
+    const el = document.createElement('div');
+    el.className='card';
+    el.style.transform = `translate3d(${x}px, -50px, ${z}px) rotateY(${(i/n)*360}deg) scale(${scale})`;
+    el.style.zIndex = Math.round(1000 + z);
+    const img = document.createElement('img');
+    img.src = carouselImages[i];
+    img.alt = 'Memory photo';
+    el.appendChild(img);
+    carousel.appendChild(el);
+  }
+}
+window.addEventListener('resize', buildCarousel);
+buildCarousel();
+
+/* Slow rotation control: allow slight hover pause for focus */
+let spinning = true;
+carousel.addEventListener('mouseenter', ()=>{ carousel.style.animationPlayState='paused'; });
+carousel.addEventListener('mouseleave', ()=>{ carousel.style.animationPlayState='running'; });
+
+/* =========================
+   Surprise reveal
+   ========================= */
+function toggleSurprise(){
+  const el = document.getElementById('surpriseContent');
+  if(el.style.display === 'block'){ el.style.display = 'none'; }
+  else { el.style.display = 'block'; window.scrollTo({top: el.offsetTop - 60, behavior:'smooth'}); }
+}
+
+/* =========================
+   Lyrics typewriter reveal (nice slow read)
+   ========================= */
+const lyricsText = document.getElementById('lyricsText');
+// we leave lyrics static (the <pre>) — if you want a typewriter effect, replace innerText with animated writing.
+// I'll add a subtle fade-in when section scrolls into view:
+const lyricsObserver = new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      entry.target.style.transition='opacity 700ms ease-out, transform 700ms ease-out';
+      entry.target.style.opacity = 1;
+      entry.target.style.transform='none';
+      lyricsObserver.unobserve(entry.target);
+    }
+  });
+},{threshold:0.2});
+const lyricsCard = document.querySelector('.lyrics-card');
+lyricsCard.style.opacity=0;lyricsCard.style.transform='translateY(20px)';
+lyricsObserver.observe(lyricsCard);
+
+/* =========================
+   Background music control
+   ========================= */
+const bgAudio = document.getElementById('bgAudio');
+const musicBtn = document.getElementById('musicBtn');
+let playing=false;
+function toggleMusic(){
+  if(!playing){
+    bgAudio.play().catch(()=>{ alert('Autoplay blocked by browser — tap the play button again to allow audio.')});
+    musicBtn.textContent = '⏸️';
+    playing=true;
+  } else {
+    bgAudio.pause();
+    musicBtn.textContent = '▶️';
+    playing=false;
+  }
+}
+// attempt to autoplay on load will likely be blocked, but we try:
+window.addEventListener('load',()=>{
+  bgAudio.play().then(()=>{ musicBtn.textContent='⏸️'; playing=true }).catch(()=>{/*blocked*/});
+});
+
+/* =========================
+   Accessibility: keyboard toggle for surprise/music
+   ========================= */
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'm' || e.key === 'M') toggleMusic();
+  if(e.key === 's' || e.key === 'S') toggleSurprise();
+});
+</script>
+</body>
+</html>
